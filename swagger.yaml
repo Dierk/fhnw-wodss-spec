@@ -66,6 +66,22 @@ paths:
           format: int64
           allowEmptyValue: false
           x-example: 42
+        - name: fromDate
+          in: query
+          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Allocations with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          required: false
+          type: string
+          format: date
+          allowEmptyValue: false
+          x-example: '2019-01-01'
+        - name: toDate
+          in: query
+          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Allocations with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          required: false
+          type: string
+          format: date
+          allowEmptyValue: false
+          x-example: '2019-03-13'
       responses:
         '200':
           description: All (filtered) allocations (Administrator) or only the own ones (Project Manager/Developer)
@@ -219,7 +235,7 @@ paths:
           format: int64
           x-example: 42
       responses:
-        '200':
+        '204':
           description: Allocation successfully deleted
         '401':
           description: Unauthenticated or invalid token
@@ -240,6 +256,23 @@ paths:
       operationId: getContracts
       produces:
         - application/json
+      parameters:
+        - name: fromDate
+          in: query
+          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Contracts with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          required: false
+          type: string
+          format: date
+          allowEmptyValue: false
+          x-example: '2019-01-01'
+        - name: toDate
+          in: query
+          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Contracts with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          required: false
+          type: string
+          format: date
+          allowEmptyValue: false
+          x-example: '2019-03-13'
       responses:
         '200':
           description: All contracts (Administrator/Project Manager) or only own ones (Developer)
@@ -389,7 +422,7 @@ paths:
           format: int64
           x-example: 42
       responses:
-        '200':
+        '204':
           description: Contract and allocations successfully deleted
         '401':
           description: Unauthenticated or invalid token
@@ -410,6 +443,18 @@ paths:
       operationId: getEmployees
       produces:
         - application/json
+      parameters:
+        - name: role
+          in: query
+          description: Filter the employees by role)
+          required: false
+          type: string
+          allowEmptyValue: false
+          x-example: ADMINISTRATOR
+          enum:
+            - ADMINISTRATOR
+            - PROJECTMANAGER
+            - DEVELOPER
       responses:
         '200':
           description: All employees (Administrator/Project Manager/Developer)
@@ -436,7 +481,7 @@ paths:
       parameters:
         - in: body
           name: employee
-          description: Employee to create (The ID/Active flag in the body will be ignored)
+          description: Employee to create (The active flag in the body will be ignored)
           required: true
           schema:
             $ref: '#/definitions/Employee'
@@ -446,6 +491,16 @@ paths:
           required: true
           type: string
           allowEmptyValue: false
+        - name: role
+          in: query
+          description: Role of the new employee
+          required: true
+          type: string
+          allowEmptyValue: false
+          enum:
+            - ADMINISTRATOR
+            - PROJECTMANAGER
+            - DEVELOPER
       responses:
         '201':
           description: New employee with the generated ID
@@ -485,8 +540,6 @@ paths:
             $ref: '#/definitions/Employee'
         '401':
           description: Unauthenticated or invalid token
-        '403':
-          description: Missing permission to get the employee
         '404':
           description: Employee not found
         '500':
@@ -559,7 +612,7 @@ paths:
           format: int64
           x-example: 42
       responses:
-        '200':
+        '204':
           description: Employee successfully anonymized
         '401':
           description: Unauthenticated or invalid token
@@ -597,6 +650,18 @@ paths:
           format: date
           allowEmptyValue: false
           x-example: '2019-03-13'
+        - name: projectManagerId
+          in: query
+          description: Filter the projects by a project manager ID
+          required: false
+          type: integer
+          maximum: 9223372036854776000
+          exclusiveMaximum: false
+          minimum: 1
+          exclusiveMinimum: false
+          format: int64
+          allowEmptyValue: false
+          x-example: 42
       responses:
         '200':
           description: All projects (Administrator) or only the assigned/involved ones (Project Manager/Developer)
@@ -744,7 +809,7 @@ paths:
           format: int64
           x-example: 42
       responses:
-        '200':
+        '204':
           description: Project and allocations successfully deleted
         '401':
           description: Unauthenticated or invalid token
@@ -761,30 +826,24 @@ paths:
     post:
       tags:
         - Token
-      summary: 'Request a JWT token by an initial login process. The JWT token is returned in the body and contains the serialized employee, accessible via the claim employee'
+      summary: 'Request a JWT token by an initial login process. The returned token contains the full employee, accessible via the claim employee'
       operationId: requestToken
       consumes:
         - application/json
       produces:
-        - text/plain
+        - application/json
       parameters:
-        - name: email
-          in: query
-          description: Email address of the employee
+        - in: body
+          name: credentials
+          description: Credentials of the employee
           required: true
-          type: string
-          allowEmptyValue: false
-        - name: password
-          in: query
-          description: Raw password of the employee
-          required: true
-          type: string
-          allowEmptyValue: false
+          schema:
+            $ref: '#/definitions/Credentials'
       responses:
         '201':
           description: JWT token with the employee claim after a successful login
           schema:
-            type: string
+            $ref: '#/definitions/Token'
         '404':
           description: Employee not found or invalid password
         '412':
@@ -797,24 +856,24 @@ paths:
     put:
       tags:
         - Token
-      summary: 'Request an updated/refreshed JWT token by providing the current valid one (Maybe soon expired?). The token is returned in the body and contains the serialized employee, accessible via the claim employee'
+      summary: 'Request an updated/refreshed JWT token by providing the current valid one (Maybe soon expired?). The returned token contains the full employee, accessible via the claim employee'
       operationId: refreshToken
       consumes:
         - application/json
       produces:
-        - text/plain
+        - application/json
       parameters:
-        - name: token
-          in: query
+        - in: body
+          name: token
           description: Valid token issued by our server
           required: true
-          type: string
-          allowEmptyValue: false
+          schema:
+            $ref: '#/definitions/Token'
       responses:
         '200':
           description: 'New, updated JWT token after a successful refresh'
           schema:
-            type: string
+            $ref: '#/definitions/Token'
         '401':
           description: Unauthenticated or invalid token
         '404':
@@ -938,6 +997,24 @@ definitions:
         exclusiveMaximum: false
     title: Contract
     description: 'Represents the contract an employee can have (Multiple contracts are possible, but date overlapping is not allowed)'
+  Credentials:
+    type: object
+    required:
+      - emailAddress
+      - rawPassword
+    properties:
+      emailAddress:
+        type: string
+        example: simon.waechter@students.fhnw.ch
+        description: Employee email address
+        minLength: 1
+        maxLength: 120
+      rawPassword:
+        type: string
+        example: 123456aA
+        description: Raw employee password
+    title: Credentials
+    description: Represents the credentials of employee with an email address and a raw password (Based on these information a JWT token is then issued)
   Employee:
     type: object
     required:
@@ -1041,4 +1118,14 @@ definitions:
         exclusiveMaximum: false
     title: Project
     description: Represents a FHNW research project with a given full-time-equivalent (FTE) workload in percentages managed by a project manager employee
+  Token:
+    type: object
+    required:
+      - token
+    properties:
+      token:
+        type: string
+        description: 'Login token with the employee claim that contains the full employee as JSON object (You can use a tool like http://calebb.net/ to inspect tokens)'
+    title: Token
+    description: Represents a login token with an employee claim that contains the whole employee as JSON object
 
