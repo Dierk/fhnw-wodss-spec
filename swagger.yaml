@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: This documentation provides an overview of the FHNW wodss API.
-  version: 1.2.0
+  version: 1.0.0
   title: FHNW Projektplanung (Modul wodss)
   contact:
     name: Wächter Simon
@@ -30,21 +30,9 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: contractId
-          in: query
-          description: 'Filter the allocations by a contract of an employee (Each filter is exclusive, so filters do not stack))'
-          required: false
-          type: integer
-          maximum: 9223372036854776000
-          exclusiveMaximum: false
-          minimum: 1
-          exclusiveMinimum: false
-          format: int64
-          allowEmptyValue: false
-          x-example: 42
         - name: employeeId
           in: query
-          description: 'Filter the allocations by an employee (Each filter is exclusive, so filters do not stack)'
+          description: Filter the allocations by an employee (Filters can stack)
           required: false
           type: integer
           maximum: 9223372036854776000
@@ -56,7 +44,7 @@ paths:
           x-example: 42
         - name: projectId
           in: query
-          description: 'Filter the allocations by a project (Each filter is exclusive, so filters do not stack))'
+          description: Filter the allocations by a project (Filters can stack)
           required: false
           type: integer
           maximum: 9223372036854776000
@@ -68,7 +56,7 @@ paths:
           x-example: 42
         - name: fromDate
           in: query
-          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Allocations with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Allocations with a start date before, but an end date after this date will match the criteria). Filters can stack'
           required: false
           type: string
           format: date
@@ -76,7 +64,7 @@ paths:
           x-example: '2019-01-01'
         - name: toDate
           in: query
-          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Allocations with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Allocations with a start date before, but an end date after this date will match the criteria). Filters can stack'
           required: false
           type: string
           format: date
@@ -84,7 +72,7 @@ paths:
           x-example: '2019-03-13'
       responses:
         '200':
-          description: All (filtered) allocations (Administrator) or only the own ones (Project Manager/Developer)
+          description: 'All (filtered) allocations (ADMINISTRATOR, PROJECTMANAGER) or only the employee own ones (DEVELOPER)'
           schema:
             type: array
             items:
@@ -92,9 +80,9 @@ paths:
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to get the allocations
+          description: 'Missing permission to get the allocation (DEVELOPER: Other uninvolved employee or project)'
         '404':
-          description: 'Employee, contract or project not found'
+          description: Employee or project not found
         '500':
           description: Uncaught or internal server error
       security:
@@ -104,6 +92,7 @@ paths:
       tags:
         - Allocation
       summary: Create a new allocation
+      description: 'ADMINISTRATORS can create allocations for every project, PROJECTMANAGER for their own projects and DEVELOPER for none'
       operationId: createAllocation
       consumes:
         - application/json
@@ -118,13 +107,13 @@ paths:
             $ref: '#/definitions/Allocation'
       responses:
         '201':
-          description: New allocation with the generated ID
+          description: 'New allocation with the generated ID (ADMINISTRATOR: All, PROJECTMANAGER: Own projects)'
           schema:
             $ref: '#/definitions/Allocation'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to create a allocation
+          description: 'Missing permission to create an allocation (PROJECTMANAGER: Somebody''s else''s project, DEVELOPER: All)'
         '404':
           description: Contract or project not found
         '412':
@@ -156,13 +145,13 @@ paths:
           x-example: 42
       responses:
         '200':
-          description: Specific allocation
+          description: 'Specific allocation (ADMINISTRATOR, PROJECTMANAGER: All, DEVELOPER: Assigned projects)'
           schema:
             $ref: '#/definitions/Allocation'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to get the allocation
+          description: 'Missing permission to get the allocation (DEVELOPER: Not assigned projects)'
         '404':
           description: Allocation not found
         '500':
@@ -199,13 +188,13 @@ paths:
           x-example: 42
       responses:
         '200':
-          description: Specific updated allocation
+          description: 'Specific updated allocation (ADMINISTRATOR: All, PROJECTMANAGER: Own projects)'
           schema:
             $ref: '#/definitions/Allocation'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to update the allocation
+          description: 'Missing permission to update the allocation (PROJECTMANAGER: Somebody''s else''s project, DEVELOPER: ALL'
         '404':
           description: 'Allocation, contract or project not found'
         '412':
@@ -236,11 +225,11 @@ paths:
           x-example: 42
       responses:
         '204':
-          description: Allocation successfully deleted
+          description: 'Allocation successfully deleted (ADMINISTRATOR: All, PROJECTMANAGER: Own projects)'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to delete the allocation
+          description: 'Missing permission to delete the allocation (PROJECTMANAGER: Somebody''s else''s project, DEVELOPER: ALL'
         '404':
           description: Allocation not found
         '500':
@@ -259,7 +248,7 @@ paths:
       parameters:
         - name: fromDate
           in: query
-          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Contracts with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Contracts with a start date before, but an end date after this date will match the criteria). Filters can stack'
           required: false
           type: string
           format: date
@@ -267,7 +256,7 @@ paths:
           x-example: '2019-01-01'
         - name: toDate
           in: query
-          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Contracts with a start date before, but an end date after this date will match the criteria). Can stack with filter'
+          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Contracts with a start date before, but an end date after this date will match the criteria). Filters can stack'
           required: false
           type: string
           format: date
@@ -275,7 +264,7 @@ paths:
           x-example: '2019-03-13'
       responses:
         '200':
-          description: All contracts (Administrator/Project Manager) or only own ones (Developer)
+          description: 'All contracts (ADMINISTRATOR, PROJECTMANAGER) or only own ones (DEVELOPER)'
           schema:
             type: array
             items:
@@ -305,13 +294,13 @@ paths:
             $ref: '#/definitions/Contract'
       responses:
         '201':
-          description: New contract with the generated ID
+          description: New contract with the generated ID (ADMINISTRATOR)
           schema:
             $ref: '#/definitions/Contract'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to create a contract
+          description: 'Missing permission to create a contract (PROJECTMANAGER, DEVELOPER)'
         '404':
           description: Employee not found
         '412':
@@ -343,13 +332,13 @@ paths:
           x-example: 42
       responses:
         '200':
-          description: Specific contract
+          description: 'Specific contract (ADMINISTRATOR, PROJECTMANAGER: All, DEVELOPER: Own contracts)'
           schema:
             $ref: '#/definitions/Contract'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to get the contract
+          description: 'Missing permission to get the contract (DEVELOPER: Somebody''s else''s contract)'
         '404':
           description: Contract not found
         '500':
@@ -386,13 +375,13 @@ paths:
           x-example: 42
       responses:
         '200':
-          description: Specific updated contract
+          description: Specific updated contract (ADMINISTRATOR)
           schema:
             $ref: '#/definitions/Contract'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to update the contract
+          description: 'Missing permission to update the contract (PROJECTMANAGER, DEVELOPER)'
         '404':
           description: Contract or employee not found
         '412':
@@ -405,7 +394,7 @@ paths:
     delete:
       tags:
         - Contract
-      summary: 'Delete a specific contract including all associated allocations (Note: Cascading delete)'
+      summary: 'Delete a specific contract (Note: The contract can only be deleted as long as he is not used for an allocation)'
       operationId: deleteContract
       produces:
         - application/json
@@ -423,13 +412,15 @@ paths:
           x-example: 42
       responses:
         '204':
-          description: Contract and allocations successfully deleted
+          description: Contract successfully deleted (ADMINISTRATOR)
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to delete the contract
+          description: 'Missing permission to delete the contract (PROJECTMANAGER, DEVELOPER)'
         '404':
           description: Contract not found
+        '412':
+          description: Precondition for the contract failed
         '500':
           description: Uncaught or internal server error
       security:
@@ -457,7 +448,7 @@ paths:
             - DEVELOPER
       responses:
         '200':
-          description: All employees (Administrator/Project Manager/Developer)
+          description: 'All employees (ADMINISTRATOR, PROJECTMANAGER, DEVELOPER)'
           schema:
             type: array
             items:
@@ -503,7 +494,7 @@ paths:
             - DEVELOPER
       responses:
         '201':
-          description: New employee with the generated ID
+          description: New employee with the generated ID (EVERYONE - as a guest)
           schema:
             $ref: '#/definitions/Employee'
         '412':
@@ -535,7 +526,7 @@ paths:
           x-example: 42
       responses:
         '200':
-          description: Specific employee
+          description: 'Specific employee (ADMINISTRATOR, PROJECTMANAGER, DEVELOPER)'
           schema:
             $ref: '#/definitions/Employee'
         '401':
@@ -559,7 +550,7 @@ paths:
       parameters:
         - in: body
           name: employee
-          description: Updated employee (The ID in the body will be ignored)
+          description: Updated employee (The ID and role in the body will be ignored)
           required: true
           schema:
             $ref: '#/definitions/Employee'
@@ -576,13 +567,13 @@ paths:
           x-example: 42
       responses:
         '200':
-          description: Specific updated employee
+          description: Specific updated employee (ADMINISTRATOR)
           schema:
             $ref: '#/definitions/Employee'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to update the employee
+          description: 'Missing permission to update the employee (PROJECTMANAGER, DEVELOPER)'
         '404':
           description: Employee not found
         '412':
@@ -613,11 +604,11 @@ paths:
           x-example: 42
       responses:
         '204':
-          description: Employee successfully anonymized
+          description: Employee successfully anonymized (ADMINISTRATOR)
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to anonymize the employee
+          description: 'Missing permission to anonymize the employee (PROJECTMANAGER, DEVELOPER)'
         '404':
           description: Employee not found
         '500':
@@ -634,22 +625,6 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: fromDate
-          in: query
-          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Projects with a start date before, but an end date after this date will match the criteria)'
-          required: false
-          type: string
-          format: date
-          allowEmptyValue: false
-          x-example: '2019-01-01'
-        - name: toDate
-          in: query
-          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Projects with a start date before, but an end date after this date will match the criteria)'
-          required: false
-          type: string
-          format: date
-          allowEmptyValue: false
-          x-example: '2019-03-13'
         - name: projectManagerId
           in: query
           description: Filter the projects by a project manager ID
@@ -662,15 +637,33 @@ paths:
           format: int64
           allowEmptyValue: false
           x-example: 42
+        - name: fromDate
+          in: query
+          description: 'Start date (YYYY-MM-DD) to create a time range with a lower boundary (Projects with a start date before, but an end date after this date will match the criteria). Filters can stack'
+          required: false
+          type: string
+          format: date
+          allowEmptyValue: false
+          x-example: '2019-01-01'
+        - name: toDate
+          in: query
+          description: 'End date (YYYY-MM-DD) to create a time range with an upper boundary (Projects with a start date before, but an end date after this date will match the criteria). Filters can stack'
+          required: false
+          type: string
+          format: date
+          allowEmptyValue: false
+          x-example: '2019-03-13'
       responses:
         '200':
-          description: All projects (Administrator) or only the assigned/involved ones (Project Manager/Developer)
+          description: 'All projects (ADMINISTRATOR, PROJECTMANAGER) or only the involved ones (DEVELOPER)'
           schema:
             type: array
             items:
               $ref: '#/definitions/Project'
         '401':
           description: Unauthenticated or invalid token
+        '404':
+          description: Project manager not found
         '500':
           description: Uncaught or internal server error
       security:
@@ -694,13 +687,13 @@ paths:
             $ref: '#/definitions/Project'
       responses:
         '201':
-          description: New project with the generated ID
+          description: New project with the generated ID (ADMINISTRATOR)
           schema:
             $ref: '#/definitions/Project'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to create a project
+          description: 'Missing permission to create a project (PROJECTMANAGER, DEVELOPER)'
         '412':
           description: Precondition for the project failed
         '500':
@@ -730,13 +723,13 @@ paths:
           x-example: 42
       responses:
         '200':
-          description: Specific project
+          description: 'Specific project (ADMINISTRATOR, PROJECTMANAGER: All, DEVELOPER: Assigned projects)'
           schema:
             $ref: '#/definitions/Project'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to get the project
+          description: 'Missing permission to get the project (DEVELOPER: Not assigned project)'
         '404':
           description: Project not found
         '500':
@@ -747,7 +740,7 @@ paths:
     put:
       tags:
         - Project
-      summary: Update a specific project
+      summary: 'Update a specific project. If the end date is changed to an earlier date in the future (Before now/past is not possible), all future allocations will be deleted and the end of pending allocations will be set to the new project end (Represents a project end)'
       operationId: updateProject
       consumes:
         - application/json
@@ -773,15 +766,15 @@ paths:
             $ref: '#/definitions/Project'
       responses:
         '200':
-          description: Specific updated project
+          description: 'Specific updated project and potentially updated/deleted project allocations in case of a project end date change (ADMINISTRATOR: All, PROJECTMANAGER: Own projects)'
           schema:
             $ref: '#/definitions/Project'
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to update the project
+          description: 'Missing permission to update the project (PROJECTMANAGER: Somebody else''s project, DEVELOPER: All'
         '404':
-          description: Project not found
+          description: Project or project manager not found
         '412':
           description: Precondition for the project failed
         '500':
@@ -810,11 +803,11 @@ paths:
           x-example: 42
       responses:
         '204':
-          description: Project and allocations successfully deleted
+          description: Project and allocations successfully deleted (ADMINISTRATOR)
         '401':
           description: Unauthenticated or invalid token
         '403':
-          description: Missing permission to delete the project
+          description: 'Missing permission to delete the project (PROJECTMANAGER, DEVELOPER)'
         '404':
           description: Project not found
         '500':
@@ -923,8 +916,8 @@ definitions:
       pensumPercentage:
         type: integer
         format: int64
-        example: 50 (= 0.5 FTE)
-        description: Full time equivalent for the contract as percentage value (0.5 FTE = 50%)
+        example: 50
+        description: Full time equivalent for the contract as percentage value (0.5 FTE = 50)
         minimum: 0
         maximum: 100
         exclusiveMinimum: false
@@ -980,8 +973,8 @@ definitions:
       pensumPercentage:
         type: integer
         format: int32
-        example: 50 (= 0.5 FTE)
-        description: Full time equivalent for the contract as percentage value (0.5 FTE = 50%)
+        example: 50
+        description: Full time equivalent for the contract as percentage value (0.5 FTE = 50)
         minimum: 0
         maximum: 100
         exclusiveMinimum: false
@@ -1091,7 +1084,7 @@ definitions:
       ftePercentage:
         type: integer
         format: int64
-        example: 500 (= 5 FTE's)
+        example: 1500
         description: Full time equivalent represented as a percentage value (1 FTE = 100% = 1 person working 1 day)
         minimum: 0
         maximum: 9223372036854776000
