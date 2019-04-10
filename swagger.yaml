@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: This documentation provides an overview of the FHNW wodss API.
-  version: 1.0.0
+  version: 2.0.0
   title: FHNW Projektplanung (Modul wodss)
   contact:
     name: Wächter Simon
